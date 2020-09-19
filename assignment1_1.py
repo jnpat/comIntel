@@ -198,7 +198,7 @@ def sumSquare(e):
 
 #main
 random = []
-epochs = 1000
+epochs = int(input("Epoch = "))
 ep = 0
 etn = []
 ets = []
