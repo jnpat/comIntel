@@ -1,29 +1,63 @@
 import numpy as np
-np.random.seed(0)
+import matplotlib.pyplot as plt
+
 def read_data(fname):
   f = open(fname,'r').read().splitlines()
   line = f[2:] #remove 2 rows up
   m = []
+
   for i in line:
     m.append(i.split('\t'))
+
   return m
 
-def cross(m): #10 ford cross validation data
-  rd = np.random.randint(1,11)
+def cross(m, random): #10 ford cross validation data
+  m = m.copy()
   test, train = [],[]
+  rd = np.random.randint(1,11)
+
+  while rd in random:
+    rd = np.random.randint(1,11)
+  random.append(rd)
   l = round(len(m)/10)
   a = l * rd
-  test = m[a - l:a]
-  del m[a - l:a]
+  test = m[(a - l):a]
+  del m[(a - l):a]
   train = m
+
   return test, train
+
+def randTrain(x):
+  y = x.copy()
+  random = []
+  train = []
+  t = []
+  l = int(len(y)/10)
+
+  for i in range(10):
+    rd = np.random.randint(0,10)
+    while rd in random:
+      rd = np.random.randint(0,10)
+    random.append(rd)
+
+  for i in random:
+    t.append(y[rd*l:(rd*l)+l])
+
+  for i in range(len(t)):
+    for j in t[i]:
+      train.append(j)
+
+  return train
+ 
 
 def split(m):
   x = []
   d = []
+
   for i in m:
     x.append(i[:8])
     d.append(i[8])
+
   return np.array(x), np.array(d)  
 
 def normalize(m, max, min):
@@ -36,24 +70,26 @@ def denormalize(m, max, min):
 
 class NN(object):
   def __init__(self):
-    node = [8,2,2,1]
+    node = []
     inputs = 8
     output = 1
     self.weight = []
     self.deltaW = []
     self.deltaB = []
-    # self.hiddenLayer = int(input("Hidden Layer = "))
-    self.hiddenLayer = 2
-    # node.append(inputs)
-    # i = 0
-    # while i < self.hiddenLayer:
-    #   node.append(int(input("Hidden Node Layer (" + str(i+1) + ") = ")))
-    #   i = i + 1
-    # self.learningRate = float(input("Learning Rate = "))
-    # self.momentumRate = float(input("Momentum Rate = "))
-    self.learningRate = 0.1
+    self.wP = 0
+    self.wbP = 0
+    self.hiddenLayer = int(input("Hidden Layer = "))
+    node.append(inputs)
+    i = 0
+
+    while i < self.hiddenLayer:
+      node.append(int(input("Hidden Node Layer (" + str(i+1) + ") = ")))
+      i = i + 1
+    self.learningRate = float(input("Learning Rate = "))
+    self.momentumRate = float(input("Momentum Rate = "))
+    self.learningRate = -0.2
     self.momentumRate = 0.1
-    # node.append(output)
+    node.append(output)
     node1, node2 = node.copy(), node.copy()
     node1.pop()
     node2.pop(0)
@@ -80,25 +116,14 @@ class NN(object):
   def diffSigmoid(self, s): #derivative of sigmoid
     return (s) * (1 - (s))
 
-  def forward(self, x, d):
+  def forward(self, x):
     y = []
-    # self.bias = []
-    # print('wb' + str(self.weightBias) +'\n')
-    # print('x' + str(x) +'\n')
-    # print('w' + str(self.weight) +'\n')
-    # for j in range(len(self.biasIn)):
-    #   self.bias.append(self.biasIn[j][0] * self.weightBias[j][0])
+
     for i in range(self.hiddenLayer + 1):
       v = np.dot(x,self.weight[i]) 
-      # print('v' + str(v) +'\n')
       x = v + self.weightBias[i]
-      # print('x' + str(x) +'\n')
       x = self.sigmoid(x) #sigmoid
-      # print('xd' + str(x) +'\n')
       y.append(np.reshape(x, (len(x), 1)))
-      # print('y' + str(y) +'\n')
-    
-    # print(self.weight)
 
     return y
 
@@ -106,99 +131,79 @@ class NN(object):
     gd = []
     graOut = self.diffSigmoid(self.y[-1]) * e #calculate gradient output
     self.weight1 = np.flip(self.weight).copy() #flip weight for back loop
-    # print(self.weight)
-    # print(self.bias)
     self.y1 = np.flip(self.y).copy() #flip output for back loop
-    # print('s' + str(self.y1))
     yHid = self.y1[1:] #output hidden
     wHid = self.weight1[:-1] #weight hidden
-    # print('wwwwww' +str(wHid))
-
-    # print(yHid)
-    # print(wHid)
     gd.append(graOut)
-    # print('gd' + str(gd) +'\n')
+    
     for i in range(self.hiddenLayer):
       gd.append((np.dot(gd[i], np.transpose(wHid[i]))) * np.transpose(self.diffSigmoid(yHid[i])))
-    # print('gd' + str(gd) +'\n') 
-    # print('yyyyy' + str(yHid))
+
     return gd, yHid
 
   def delta(self, g, yHid, x):
-    dw = []
+    dws = []
     dbs = []
     gd = []
     gd = g[:-1]
-    # print('gd' + str(gd) +'\n') 
-    # print('g' + str(g) +'\n') 
-    # print(self.weightBias)
-    # print(g)
     self.weightBias1 = np.flip(self.weightBias).copy()
-    # print(self.weightBias)
-    # print('gd' + str(gd) +'\n')
-    # print('yhid' + str(yHid) +'\n')
+    
     for i in range(self.hiddenLayer):
-      dw.append(-(self.learningRate) * gd[i] * yHid[i])
-      # print(dw)
-    dw.append(-(self.learningRate) * g[-1] * np.reshape(x, (len(x), 1)))
-    # print('dw' + str(dw) +'\n') 
-    # print('wb1' + str(self.weightBias1) +'\n')
+      dw = -(self.learningRate) * gd[i] * yHid[i]
+      dws.insert(0, dw)
+    dw = -(self.learningRate) * g[-1] * np.reshape(x, (len(x), 1))
+    dws.insert(0,dw)
+
     for j in range(self.hiddenLayer + 1):
       db = (-(self.learningRate) * g[j][0] * self.weightBias1[j])
       dbs.insert(0, db)
 
-    # print('dw' + str(dw) +'\n')
-    # print('dbs' + str(dbs) +'\n')
-
-  
-    return np.flip(dw), dbs
+    return dws, dbs
 
   def backward(self, x, e):
-    # self.deltaWP = 0
-    # self.deltaBP = np.array(0)
     gradient, yHidden = self.gradients(e)
     self.deltaW, self.deltaB = self.delta(gradient, yHidden, x)
-    # print('dw' + str(self.deltaW) +'\n')
-    # print('db' + str(self.deltaB) +'\n')  
-    # self.deltaW, self.weight = np.flip(self.deltaW), np.flip(self.weight)
-    # self.weightBias = np.flip(self.weightBias)
-    # print('w' + str(self.weight) +'\n')
-    #save weight
-    # print(self.deltaW)
-    # print(self.deltaB)
-    # self.weight = self.weight + self.momentumRate * (self.deltaW - self.deltaWP) + self.deltaW
-    # self.deltaWP = self.deltaW
-    # print(self.weight)
-    # print(self.weightBias)
-    for i in range(self.hiddenLayer + 1):
-      self.weight[i] = self.weight[i] + self.momentumRate * (self.deltaW[i] - self.deltaWP[i]) + self.deltaW[i]
-      self.weightBias[i] = self.weightBias[i] + self.momentumRate * (self.deltaB[i] - self.deltaBP[i]) + self.deltaB[i]
-    # self.deltaBP = self.deltaB
 
-    # print(self.weightBias)
+    if self.wP == 0 and self.wbP == 0:
+      self.wP = self.weight.copy()
+      self.wbP = self.weightBias.copy()
+
+    for i in range(self.hiddenLayer + 1):
+      self.weight[i] = self.weight[i] + self.momentumRate * (self.weight[i] - self.wP[i]) + self.deltaW[i]
+      self.weightBias[i] = self.weightBias[i] + self.momentumRate * (self.weightBias[i] - self.wbP[i]) + self.deltaB[i]
+    self.wP = self.weight.copy()
+    self.wbP = self.weightBias.copy()
 
   def train(self, x, d):
+    self.y = []
+    self.y = self.forward(x)
+    e = self.error(d, self.y) #calculate error
+    self.backward(x, e)
 
-    e = 0
-    for i in range(2):
-      self.y = []
-      self.y = self.forward(x, d)
-      err = self.error(d, self.y) #calculate error
-      if i <= 0:
-        gd, yh = self.gradients(err)
-        self.deltaWP, self.deltaBP = self.delta(gd, yh, x)
-        print('www' + str(self.weight) +'\n')
-        print('dppp' + str(self.deltaWP) +'\n')
-        self.backward(x, err)
-      else:
-        self.backward(x, err)
-        gd, yh = self.gradients(e)
-        self.deltaWP, self.deltaBP = self.delta(gd, yh, x)
-      e = e + err
-      print('epoch = ' + str(i) + ' Error = ' + str(e))
+    return e
+
+  def test(self, x, d):
+    y = []
+    y = self.forward(x)
+    e = self.error(d, y)
+
+    return e
   
+def sumSquare(e):
+  err = 0
+
+  for i in e:
+    err = err + pow(i,2)
+  return err/2
 
 #main
+random = []
+epochs = 1000
+ep = 0
+etn = []
+ets = []
+error = []
+errors = []
 m = read_data('Flood_dataset.txt')
 m = np.array(list(map(lambda sl: list(map(float, sl)), m)))
 max = np.max(m)
@@ -206,23 +211,64 @@ min = np.min(m)
 # normalization input data to [0,1]
 m = normalize(m, max, min)
 #10 ford cross validation data
-test, train = cross(m)
+test, train = cross(m, random)
+train = randTrain(train)
+# print(len(train))
 #split test/train input and desired output
 xTest, dTest = split(test)
 xTrain, dTrain = split(train)
 NN = NN()
 
-# for i in range(len(xTrain)):
-#   NN.train(xTrain[i], dTrain[i])
-
-NN.train(xTrain[0], dTrain[0])
-
-
-# print(xTest, dTest, xTrain, dTrain)
-# print(type(xTest), len(dTest), type(xTrain), len(dTrain))
-# # denormalization output data[0,1] to real number
-# m = denormalize(m,max,min)
-
+while ep < epochs:
+  avtn = []
+  for i in range(int(epochs/10)): #How many epoch for 1 cross validation
+    err = []
+    errt = []
+    for j in range(len(xTrain)):
+      e = NN.train(xTrain[j], dTrain[j])
+      err.append(e)
+    train = randTrain(train)
+    xTrain, dTrain = split(train)
+    ep = ep + 1
+    print('epoch' + str(ep))
+    if ep == epochs:
+      break
+    etn.append(sumSquare(err))
+    avtn.append(etn)
+    # print('Sum Sqaure Error Train = ',etn)
+  # print(xTest)
+  error.append(np.average(avtn))
+  print('Sum Sqaure Error Train[Average] = ',np.average(avtn))
+  for k in range(len(xTest)):
+    et = NN.test(xTest[k], dTest[k])
+    # print(et)
+    errt.append(et)
+  # print(errt)
+  ets.append(sumSquare(errt[0][0]))
+  errors.append(ets[0])
+  print('Sum Sqaure Error Test = ',ets)
+  etn = []
+  ets = []
+  if len(random) == 10:
+    random = []
+    break
+  #10 ford cross validation data
+  test, train = cross(m, random)
+  train = randTrain(train)
+  # print(len(train))
+  #split test/train input and desired output
+  xTest, dTest = split(test)
+  xTrain, dTrain = split(train)
+  
+#plot graph
+x = [1,2,3,4,5,6,7,8,9,10]
+# plt.bar(x, errors, width = 0.8, color = ['lightblue']) 
+plt.plot(x, error, color='lightblue', linewidth = 3, marker='o', markerfacecolor='dodgerblue', markersize=12, label = "Train")
+# plt.plot(x, errors, color='plum', linewidth = 3, marker='o', markerfacecolor='m', markersize=12, label = "Test")
+plt.legend()
+plt.xlabel('Iteration')  
+plt.ylabel('Error')  
+plt.show()
 
 
 
