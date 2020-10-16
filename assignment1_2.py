@@ -221,7 +221,7 @@ def confusion(d,o):
 #main
 random = []
 ep = 0
-epochs = 100
+epochs = int(input("Epoch = "))
 acc = []
 accs = []
 cl = []
