@@ -1,5 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
+# np.random.seed(0)
 
 def read_data(fname):
   f = open(fname,'r').read().splitlines()
@@ -87,8 +88,6 @@ class NN(object):
       i = i + 1
     self.learningRate = float(input("Learning Rate = "))
     self.momentumRate = float(input("Momentum Rate = "))
-    self.learningRate = -0.2
-    self.momentumRate = 0.1
     node.append(output)
     node1, node2 = node.copy(), node.copy()
     node1.pop()
@@ -204,6 +203,7 @@ etn = []
 ets = []
 error = []
 errors = []
+avtn = []
 m = read_data('Flood_dataset.txt')
 m = np.array(list(map(lambda sl: list(map(float, sl)), m)))
 max = np.max(m)
@@ -220,7 +220,6 @@ xTrain, dTrain = split(train)
 NN = NN()
 
 while ep < epochs:
-  avtn = []
   for i in range(int(epochs/10)): #How many epoch for 1 cross validation
     err = []
     errt = []
@@ -230,15 +229,20 @@ while ep < epochs:
     train = randTrain(train)
     xTrain, dTrain = split(train)
     ep = ep + 1
+
+    etn.append(sumSquare(err))
+    avtn.append(etn)
+
     print('epoch' + str(ep))
     if ep == epochs:
       break
-    etn.append(sumSquare(err))
-    avtn.append(etn)
+
     # print('Sum Sqaure Error Train = ',etn)
   # print(xTest)
   error.append(np.average(avtn))
   print('Sum Sqaure Error Train[Average] = ',np.average(avtn))
+  avtn = []
+  
   for k in range(len(xTest)):
     et = NN.test(xTest[k], dTest[k])
     # print(et)
@@ -249,9 +253,11 @@ while ep < epochs:
   print('Sum Sqaure Error Test = ',ets)
   etn = []
   ets = []
+
   if len(random) == 10:
     random = []
     break
+  
   #10 ford cross validation data
   test, train = cross(m, random)
   train = randTrain(train)
