@@ -89,7 +89,6 @@ class NN(object):
     self.deltaB = []
     self.wP = 0
     self.wbP = 0
-    self.hiddenLayer = 6
     self.hiddenLayer = int(input("Hidden Layer = "))
     node.append(inputs)
     i = 0
