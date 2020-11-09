@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 # Generate fuzzy universal set
 x_qual = np.arange(0, 11, 1)
 x_serv = np.arange(0, 11, 1)
-x_tip  = np.arange(0, 101, 1)
+x_tip  = np.arange(0, 21, 1)
 
 # Generate fuzzy membership functions
 qual_lo = fuzz.trimf(x_qual, [0, 0, 5])
@@ -14,9 +14,9 @@ qual_hi = fuzz.trimf(x_qual, [5, 10, 10])
 serv_lo = fuzz.trimf(x_serv, [0, 0, 5])
 serv_md = fuzz.trimf(x_serv, [0, 5, 10])
 serv_hi = fuzz.trimf(x_serv, [5, 10, 10])
-tip_lo = fuzz.trimf(x_tip, [0, 0, 50])
-tip_md = fuzz.trimf(x_tip, [0, 50, 100])
-tip_hi = fuzz.trimf(x_tip, [50, 100, 100])
+tip_lo = fuzz.trimf(x_tip, [0, 0, 10])
+tip_md = fuzz.trimf(x_tip, [0, 10, 20])
+tip_hi = fuzz.trimf(x_tip, [10, 20, 20])
 
 # Show fuzzy membership functions
 fig, (ax0, ax1, ax2) = plt.subplots(nrows=3, figsize=(6, 4))
@@ -81,7 +81,7 @@ aggregated = np.fmax(tip_activation_lo,
 # Calculate defuzzified result
 tip = fuzz.defuzz(x_tip, aggregated, 'centroid')
 tip_activation = fuzz.interp_membership(x_tip, aggregated, tip)  # for plot
-print('Tip Amount =',tip)
+print('% Tip of food =',tip)
 
 # Show the results
 fig, ax0 = plt.subplots(figsize=(6, 4))
